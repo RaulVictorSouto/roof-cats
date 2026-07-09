@@ -1,6 +1,6 @@
 import { Input } from "./entities/input";
 import { Cat } from "./entities/cat";
-import { Obstacle } from "./entities/Obstacle";
+import { Obstacle, ObstacleType } from "./entities/obstacle";
 export class Engine {
 
     readonly canvas: HTMLCanvasElement;
@@ -66,14 +66,37 @@ export class Engine {
         }
 
         this.spawnTimer += delta;
+
         if (this.spawnTimer > 1.5) {
+
             this.spawnTimer = 0;
+
+            const types = [
+                ObstacleType.Small,
+                ObstacleType.Small,
+                ObstacleType.Small,
+
+                ObstacleType.Medium,
+                ObstacleType.Medium,
+
+                ObstacleType.Large,
+
+                ObstacleType.Wall,
+
+                ObstacleType.Gap
+            ];
+
+            const randomType =
+                types[Math.floor(Math.random() * types.length)];
+
             this.obstacles.push(
                 new Obstacle(
+                    randomType,
                     this.canvas.width + 100,
                     this.groundY
                 )
             );
+
         }
 
         this.floorOffset += this.gameSpeed * delta;

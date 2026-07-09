@@ -10,16 +10,20 @@ export class Cat {
     grounded = false;
     private groundY: number = 0;
 
+    maxJumps = 2;
+    jumpCount = 0;
+
     constructor(groundY:number){
         this.y = groundY - this.height;
     }
 
     jump(){
-        if(!this.grounded)
+        if(!this.grounded && this.jumpCount >= this.maxJumps)
             return;
 
         this.velocityY = this.jumpForce;
         this.grounded = false;
+        this.jumpCount++;
     }
 
     update(delta:number){
@@ -30,6 +34,7 @@ export class Cat {
             this.y = this.groundY - this.height;
             this.velocityY = 0;
             this.grounded = true;
+            this.jumpCount = 0;
         }
     }
 
