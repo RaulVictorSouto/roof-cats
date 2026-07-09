@@ -1,6 +1,6 @@
 import { Input } from "./entities/input";
 import { Cat } from "./entities/cat";
-
+import { Obstacle } from "./entities/Obstacle";
 export class Engine {
 
     readonly canvas: HTMLCanvasElement;
@@ -17,6 +17,10 @@ export class Engine {
     private cat!: Cat;
     private gameSpeed = 350;
 
+    private obstacles: Obstacle[] = [];
+    private spawnTimer = 0;
+
+    private floorOffset = 0;
 
    constructor(canvas: HTMLCanvasElement) {
         this.canvas = canvas;
@@ -46,6 +50,7 @@ export class Engine {
         const delta = (time - this.lastTime)/1000;
         this.lastTime = time;
         this.update(delta);
+        this.obstacles = this.obstacles.filter(o => o.x + o.width > 0);
         this.render();
         requestAnimationFrame(this.loop);
     }
@@ -55,6 +60,23 @@ export class Engine {
             this.cat.jump();
 
         this.cat.update(delta);
+
+        for (const obstacle of this.obstacles) {
+            obstacle.update(delta, this.gameSpeed);
+        }
+
+        this.spawnTimer += delta;
+        if (this.spawnTimer > 1.5) {
+            this.spawnTimer = 0;
+            this.obstacles.push(
+                new Obstacle(
+                    this.canvas.width + 100,
+                    this.groundY
+                )
+            );
+        }
+
+        this.floorOffset += this.gameSpeed * delta;
     }
 
     render() {
@@ -72,6 +94,8 @@ export class Engine {
                 Math.PI * 2
             );
             this.ctx.fill();
+
+            const x = (star.x * this.canvas.width - this.floorOffset * 0.15) % this.canvas.width;
         }
 
         // chão
@@ -85,6 +109,22 @@ export class Engine {
 
         // gato
         this.cat.render(this.ctx);
+
+        //obstaculo
+        for (const obstacle of this.obstacles) {
+            obstacle.render(this.ctx);
+        }
+
+        const tile = 80;
+        for (let x = -(this.floorOffset % tile); x < this.canvas.width; x += tile) {
+            this.ctx.strokeStyle = "#FF2ED6";
+            this.ctx.strokeRect(
+                x,
+                this.groundY,
+                tile,
+                40
+            );
+        }
     }
 
     resize() {

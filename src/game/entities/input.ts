@@ -3,8 +3,23 @@ export class Input{
     private jumpRequested=false;
 
     constructor(){
-        window.addEventListener("pointerdown",()=>{
-            this.jumpRequested=true;
+         // Mobile e mouse
+        window.addEventListener("pointerdown", () => {
+            this.jumpRequested = true;
+        });
+
+        // Teclado
+        window.addEventListener("keydown", (event) => {
+
+            if (
+                event.code === "Space" ||
+                event.code === "ArrowUp" ||
+                event.code === "KeyW"
+            ) {
+                event.preventDefault(); // Evita rolar a página
+                this.jumpRequested = true;
+            }
+
         });
     }
 
