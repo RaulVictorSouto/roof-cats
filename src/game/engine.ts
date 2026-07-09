@@ -27,6 +27,8 @@ export class Engine {
     private score = 0;
     private nextSpawn = 1.5;
 
+    private gameOver = false;
+
    constructor(canvas: HTMLCanvasElement) {
         this.canvas = canvas;
 
@@ -61,6 +63,9 @@ export class Engine {
     }
 
    update(delta: number) {
+
+    if (this.gameOver)
+        return;
 
         if (this.input.consumeJump())
             this.cat.jump();
@@ -124,6 +129,11 @@ export class Engine {
         // Pontuação
         this.score += delta * 100;
         this.gameSpeed += delta * 10;
+
+        if(this.checkCollision()){
+            this.gameOver = true;
+            alert("Game Over! Sua pontuação: " + Math.floor(this.score));
+        }
     }
 
     render() {
@@ -192,6 +202,30 @@ export class Engine {
         if (this.cat) {
             this.cat.setGroundY(this.groundY);
         }
+    }
+
+    private checkCollision(): boolean {
+        const cat = this.cat.getBounds();
+
+        for (const obstacle of this.obstacles) {
+
+            const bounds = obstacle.getBounds();
+
+            if (!bounds)
+                continue;
+
+            if (
+                cat.x < bounds.x + bounds.width &&
+                cat.x + cat.width > bounds.x &&
+                cat.y < bounds.y + bounds.height &&
+                cat.y + cat.height > bounds.y
+            ) {
+                return true;
+            }
+
+        }
+
+        return false;
     }
 
 }

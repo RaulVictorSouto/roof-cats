@@ -49,5 +49,14 @@ export class Cat {
     setGroundY(groundY: number) {
         this.groundY = groundY
     }
+        
+    getBounds() {
+        return {
+            x: this.x + 8,
+            y: this.y + 6,
+            width: this.width - 16,
+            height: this.height - 10
+        };
+    }
 
 }

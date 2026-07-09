@@ -78,6 +78,19 @@ export class Obstacle {
         ctx.shadowBlur = 0;
     }
 
+    getBounds() {
+
+        if (this.type === ObstacleType.Gap)
+            return null;
+
+        return {
+            x: this.x,
+            y: this.y,
+            width: this.width,
+            height: this.height
+        };
+    }
+
 }
 
 
