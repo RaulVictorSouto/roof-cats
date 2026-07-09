@@ -1,10 +1,12 @@
 import { Input } from "./entities/input";
 import { Cat } from "./entities/cat";
 import { Obstacle, ObstacleType } from "./entities/obstacle";
+import { Hud } from "./entities/hub";
 export class Engine {
 
     readonly canvas: HTMLCanvasElement;
     readonly ctx: CanvasRenderingContext2D;
+    private hud = new Hud();
     
     private lastTime = 0;
     private stars = Array.from({length:120},()=>({
@@ -21,6 +23,9 @@ export class Engine {
     private spawnTimer = 0;
 
     private floorOffset = 0;
+
+    private score = 0;
+    private nextSpawn = 1.5;
 
    constructor(canvas: HTMLCanvasElement) {
         this.canvas = canvas;
@@ -55,21 +60,35 @@ export class Engine {
         requestAnimationFrame(this.loop);
     }
 
-    update(delta:number){
-        if(this.input.consumeJump())
+   update(delta: number) {
+
+        if (this.input.consumeJump())
             this.cat.jump();
 
         this.cat.update(delta);
 
+        // Atualiza obstáculos
         for (const obstacle of this.obstacles) {
             obstacle.update(delta, this.gameSpeed);
         }
 
+        // Remove obstáculos que saíram da tela
+        this.obstacles = this.obstacles.filter(
+            obstacle => obstacle.x + obstacle.width > 0
+        );
+
+        // Spawn
         this.spawnTimer += delta;
 
-        if (this.spawnTimer > 1.5) {
+        if (this.spawnTimer >= this.nextSpawn) {
 
             this.spawnTimer = 0;
+
+            // Intervalo diminui conforme a velocidade aumenta
+            this.nextSpawn = Math.max(
+                0.35,
+                1.5 - this.gameSpeed / 3000
+            );
 
             const types = [
                 ObstacleType.Small,
@@ -99,7 +118,12 @@ export class Engine {
 
         }
 
+        // Movimento do chão
         this.floorOffset += this.gameSpeed * delta;
+
+        // Pontuação
+        this.score += delta * 100;
+        this.gameSpeed += delta * 10;
     }
 
     render() {
@@ -148,6 +172,15 @@ export class Engine {
                 40
             );
         }
+
+        // ===== HUD =====
+        this.hud.render(
+            this.ctx,
+            this.canvas,
+            this.score
+        );
+
+        this.ctx.restore();
     }
 
     resize() {
