@@ -15,6 +15,7 @@ export class Engine {
     private groundY = 0;
     private input!: Input;
     private cat!: Cat;
+    private gameSpeed = 350;
 
 
    constructor(canvas: HTMLCanvasElement) {
