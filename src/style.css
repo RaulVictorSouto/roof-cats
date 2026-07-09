@@ -1,0 +1,92 @@
+/* =========================
+   RESET
+========================= */
+
+*,
+*::before,
+*::after {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+/* =========================
+   DESIGN TOKENS
+========================= */
+
+:root {
+
+    /* Background */
+
+    --bg-900: #080015;
+    --bg-800: #120326;
+    --bg-700: #1A0A35;
+    --bg-600: #251247;
+
+    /* Neon */
+
+    --cyan: #1EEBFF;
+    --cyan-dark: #00BFD8;
+
+    --pink: #FF2ED6;
+    --pink-dark: #D300AA;
+
+    --yellow: #FFE600;
+    --yellow-dark: #CDB400;
+
+    /* Texto */
+
+    --text: #E9FCFF;
+    --text-secondary: #A8B9D9;
+    --text-muted: #69789A;
+
+    /* Bordas */
+
+    --border: rgba(0, 255, 255, .15);
+
+    /* Glow */
+
+    --glow-cyan: 0 0 5px #1EEBFF,
+                 0 0 12px #1EEBFF,
+                 0 0 24px #1EEBFF;
+
+    --glow-pink: 0 0 5px #FF2ED6,
+                 0 0 12px #FF2ED6,
+                 0 0 24px #FF2ED6;
+
+    --glow-yellow: 0 0 5px #FFE600,
+                   0 0 12px #FFE600,
+                   0 0 24px #FFE600;
+
+    /* Radius */
+
+    --radius-sm: 8px;
+    --radius-md: 14px;
+    --radius-lg: 22px;
+
+}
+
+
+html,
+body {
+
+    width: 100%;
+    height: 100%;
+
+    overflow: hidden;
+
+    background:
+        radial-gradient(circle at top,
+            #24134d 0%,
+            #120326 35%,
+            #080015 100%);
+
+    color: var(--text);
+
+    font-family: "Space Grotesk", sans-serif;
+
+    touch-action: manipulation;
+
+}
+
+
