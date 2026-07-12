@@ -28,6 +28,7 @@ export class Engine {
     private nextSpawn = 1.5;
 
     private gameOver = false;
+    private roofHeight = 40;
 
     constructor(canvas: HTMLCanvasElement) {
         this.canvas = canvas;
@@ -194,6 +195,17 @@ export class Engine {
             this.score
         );
 
+
+
+
+
+        this.drawFloor(
+    0,
+    this.canvas.width
+);
+
+this.drawBuildingWall();
+
         this.ctx.restore();
     }
 
@@ -305,5 +317,63 @@ export class Engine {
 
         this.ctx.restore();
     }
+
+
+
+    private drawBuildingWall() {
+
+    const top = this.groundY + this.roofHeight;
+
+    // Fundo
+    this.ctx.fillStyle = "#0A0218";
+    this.ctx.fillRect(
+        0,
+        top,
+        this.canvas.width,
+        this.canvas.height - top
+    );
+
+    // Colunas
+    const column = 50;
+
+    this.ctx.strokeStyle = "#31114D";
+    this.ctx.lineWidth = 1;
+
+    for (let x = 0; x < this.canvas.width; x += column) {
+
+        this.ctx.beginPath();
+        this.ctx.moveTo(x, top);
+        this.ctx.lineTo(x, this.canvas.height);
+        this.ctx.stroke();
+
+    }
+
+    // Linhas horizontais
+
+    for (let y = top; y < this.canvas.height; y += 35) {
+
+        this.ctx.beginPath();
+        this.ctx.moveTo(0, y);
+        this.ctx.lineTo(this.canvas.width, y);
+        this.ctx.stroke();
+
+    }
+
+    // Linha neon separando telhado da parede
+
+    this.ctx.shadowBlur = 18;
+    this.ctx.shadowColor = "#FF2ED6";
+
+    this.ctx.strokeStyle = "#FF2ED6";
+    this.ctx.lineWidth = 3;
+
+    this.ctx.beginPath();
+    this.ctx.moveTo(0, top);
+    this.ctx.lineTo(this.canvas.width, top);
+    this.ctx.stroke();
+
+    this.ctx.shadowBlur = 0;
+
+}
 
 }
