@@ -184,10 +184,7 @@ export class Engine {
 
         let floorStart = 0;
 
-        this.drawFloor(
-            floorStart,
-            this.canvas.width
-        );
+        this.drawFloor();
         // ===== HUD =====
         this.hud.render(
             this.ctx,
@@ -195,14 +192,7 @@ export class Engine {
             this.score
         );
 
-
-
-
-
-        this.drawFloor(
-    0,
-    this.canvas.width
-);
+        this.drawFloor();
 
 this.drawBuildingWall();
 
@@ -244,31 +234,84 @@ this.drawBuildingWall();
         return false;
     }
 
-    private drawFloor(from: number, to: number) {
+private drawFloor() {
 
-        const tile = 80;
+    const tile = 80;
+    const top = this.groundY;
 
-        const start =
-            from - ((this.floorOffset % tile + tile) % tile);
+    // Linha neon principal
+    this.ctx.strokeStyle = "#FF2ED6";
+    this.ctx.lineWidth = 4;
+    this.ctx.shadowBlur = 18;
+    this.ctx.shadowColor = "#FF2ED6";
+
+    this.ctx.beginPath();
+    this.ctx.moveTo(0, top);
+    this.ctx.lineTo(this.canvas.width, top);
+    this.ctx.stroke();
+
+    this.ctx.shadowBlur = 0;
+
+    // Telhas
+    const offset = this.floorOffset % tile;
+
+    for (let x = -offset; x < this.canvas.width + tile; x += tile) {
+
+        this.ctx.fillStyle = "#140325";
+
+        this.ctx.fillRect(
+            x + 2,
+            top + 2,
+            tile - 4,
+            36
+        );
+
+        this.ctx.strokeStyle = "#8E156D";
+        this.ctx.lineWidth = 1;
+
+        this.ctx.strokeRect(
+            x + 2,
+            top + 2,
+            tile - 4,
+            36
+        );
+
+        // Linha vertical neon
 
         this.ctx.strokeStyle = "#FF2ED6";
-        this.ctx.lineWidth = 4;
 
-        for (let x = start; x < to; x += tile) {
-
-            if (x + tile < from)
-                continue;
-
-            this.drawRoofTile(
-                x,
-                this.groundY,
-                tile,
-                40
-            );
-
-        }
+        this.ctx.beginPath();
+        this.ctx.moveTo(x, top);
+        this.ctx.lineTo(x, top + 38);
+        this.ctx.stroke();
 
     }
+
+    // Parede do prédio
+
+    this.ctx.fillStyle = "#090114";
+
+    this.ctx.fillRect(
+        0,
+        top + 40,
+        this.canvas.width,
+        this.canvas.height
+    );
+
+    // Linhas da parede
+
+    this.ctx.strokeStyle = "#1A0830";
+
+    for (let y = top + 40; y < this.canvas.height; y += 28) {
+
+        this.ctx.beginPath();
+        this.ctx.moveTo(0, y);
+        this.ctx.lineTo(this.canvas.width, y);
+        this.ctx.stroke();
+
+    }
+
+}
 
 
 
