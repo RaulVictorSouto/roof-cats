@@ -7,12 +7,12 @@ export class Engine {
     readonly canvas: HTMLCanvasElement;
     readonly ctx: CanvasRenderingContext2D;
     private hud = new Hud();
-    
+
     private lastTime = 0;
-    private stars = Array.from({length:120},()=>({
-        x:Math.random(),
-        y:Math.random(),
-        size:Math.random()*2
+    private stars = Array.from({ length: 120 }, () => ({
+        x: Math.random(),
+        y: Math.random(),
+        size: Math.random() * 2
     }));
     private groundY = 0;
     private input!: Input;
@@ -29,7 +29,7 @@ export class Engine {
 
     private gameOver = false;
 
-   constructor(canvas: HTMLCanvasElement) {
+    constructor(canvas: HTMLCanvasElement) {
         this.canvas = canvas;
 
         const ctx = canvas.getContext("2d");
@@ -49,12 +49,12 @@ export class Engine {
         window.addEventListener("resize", () => this.resize());
     }
 
-    start(){
+    start() {
         requestAnimationFrame(this.loop);
     }
 
-    private loop = (time:number)=>{
-        const delta = (time - this.lastTime)/1000;
+    private loop = (time: number) => {
+        const delta = (time - this.lastTime) / 1000;
         this.lastTime = time;
         this.update(delta);
         this.obstacles = this.obstacles.filter(o => o.x + o.width > 0);
@@ -62,95 +62,95 @@ export class Engine {
         requestAnimationFrame(this.loop);
     }
 
-   update(delta: number) {
+    update(delta: number) {
 
-    if (this.gameOver)
-        return;
+        if (this.gameOver)
+            return;
 
-    if (this.input.consumeJump())
-        this.cat.jump();
+        if (this.input.consumeJump())
+            this.cat.jump();
 
-    // ==========================
-    // Verifica se existe um buraco sob o gato
-    // ==========================
+        // ==========================
+        // Verifica se existe um buraco sob o gato
+        // ==========================
 
-    // Atualiza física do gato
-    this.cat.update(delta);
+        // Atualiza física do gato
+        this.cat.update(delta);
 
-    // Atualiza obstáculos
-    for (const obstacle of this.obstacles) {
-        obstacle.update(delta, this.gameSpeed);
-    }
+        // Atualiza obstáculos
+        for (const obstacle of this.obstacles) {
+            obstacle.update(delta, this.gameSpeed);
+        }
 
-    // Remove obstáculos fora da tela
-    this.obstacles = this.obstacles.filter(
-        obstacle => obstacle.x + obstacle.width > 0
-    );
-
-    // ==========================
-    // Spawn
-    // ==========================
-
-    this.spawnTimer += delta;
-
-    if (this.spawnTimer >= this.nextSpawn) {
-
-        this.spawnTimer = 0;
-
-        this.nextSpawn = Math.max(
-            0.35,
-            1.5 - this.gameSpeed / 3000
+        // Remove obstáculos fora da tela
+        this.obstacles = this.obstacles.filter(
+            obstacle => obstacle.x + obstacle.width > 0
         );
 
-        const types = [
-            ObstacleType.Small,
-            ObstacleType.Small,
-            ObstacleType.Small,
+        // ==========================
+        // Spawn
+        // ==========================
 
-            ObstacleType.Medium,
-            ObstacleType.Medium,
+        this.spawnTimer += delta;
 
-            ObstacleType.Large,
+        if (this.spawnTimer >= this.nextSpawn) {
 
-            ObstacleType.Wall
-        ];
+            this.spawnTimer = 0;
 
-        const randomType =
-            types[Math.floor(Math.random() * types.length)];
+            this.nextSpawn = Math.max(
+                0.35,
+                1.5 - this.gameSpeed / 3000
+            );
 
-        this.obstacles.push(
-            new Obstacle(
-                randomType,
-                this.canvas.width + 100,
-                this.groundY
-            )
-        );
+            const types = [
+                ObstacleType.Small,
+                ObstacleType.Small,
+                ObstacleType.Small,
+
+                ObstacleType.Medium,
+                ObstacleType.Medium,
+
+                ObstacleType.Large,
+
+                ObstacleType.Wall
+            ];
+
+            const randomType =
+                types[Math.floor(Math.random() * types.length)];
+
+            this.obstacles.push(
+                new Obstacle(
+                    randomType,
+                    this.canvas.width + 100,
+                    this.groundY
+                )
+            );
+        }
+
+        // Movimento
+        this.floorOffset += this.gameSpeed * delta;
+
+        this.score += delta * 100;
+        this.gameSpeed += delta * 10;
+
+        // Morreu ao cair
+        if (this.cat.y > this.canvas.height + 200) {
+
+            this.gameOver = true;
+            alert("Você caiu!");
+
+            return;
+        }
+
+        // Morreu batendo
+        if (this.checkCollision()) {
+
+            this.gameOver = true;
+            alert("Game Over! Sua pontuação: " + Math.floor(this.score));
+
+        }
+
     }
-
-    // Movimento
-    this.floorOffset += this.gameSpeed * delta;
-
-    this.score += delta * 100;
-    this.gameSpeed += delta * 10;
-
-    // Morreu ao cair
-    if (this.cat.y > this.canvas.height + 200) {
-
-        this.gameOver = true;
-        alert("Você caiu!");
-
-        return;
-    }
-
-    // Morreu batendo
-    if (this.checkCollision()) {
-
-        this.gameOver = true;
-        alert("Game Over! Sua pontuação: " + Math.floor(this.score));
-
-    }
-
-}
 
     render() {
         this.ctx.fillStyle = "#0b0720";
@@ -179,14 +179,14 @@ export class Engine {
             obstacle.render(this.ctx);
         }
 
-  const tile = 80;
+        const tile = 80;
 
-let floorStart = 0;
+        let floorStart = 0;
 
-this.drawFloor(
-    floorStart,
-    this.canvas.width
-);
+        this.drawFloor(
+            floorStart,
+            this.canvas.width
+        );
         // ===== HUD =====
         this.hud.render(
             this.ctx,
@@ -234,28 +234,76 @@ this.drawFloor(
 
     private drawFloor(from: number, to: number) {
 
-    const tile = 80;
+        const tile = 80;
 
-    const start =
-        from - ((this.floorOffset % tile + tile) % tile);
+        const start =
+            from - ((this.floorOffset % tile + tile) % tile);
 
-    this.ctx.strokeStyle = "#FF2ED6";
-    this.ctx.lineWidth = 4;
+        this.ctx.strokeStyle = "#FF2ED6";
+        this.ctx.lineWidth = 4;
 
-    for (let x = start; x < to; x += tile) {
+        for (let x = start; x < to; x += tile) {
 
-        if (x + tile < from)
-            continue;
+            if (x + tile < from)
+                continue;
 
-        this.ctx.strokeRect(
-            x,
-            this.groundY,
-            tile,
-            40
-        );
+            this.drawRoofTile(
+                x,
+                this.groundY,
+                tile,
+                40
+            );
+
+        }
 
     }
 
-}
+
+
+    private drawRoofTile(
+        x: number,
+        y: number,
+        width: number,
+        height: number
+    ) {
+
+        const depth = 12;
+
+        this.ctx.save();
+
+        // Glow
+        this.ctx.shadowBlur = 12;
+        this.ctx.shadowColor = "#FF2ED6";
+
+        // ===== TOPO =====
+        this.ctx.beginPath();
+        this.ctx.moveTo(x, y);
+        this.ctx.lineTo(x + width, y);
+        this.ctx.lineTo(x + width - depth, y + depth);
+        this.ctx.lineTo(x - depth, y + depth);
+        this.ctx.closePath();
+
+        this.ctx.fillStyle = "#24134d";
+        this.ctx.fill();
+
+        this.ctx.strokeStyle = "#FF2ED6";
+        this.ctx.lineWidth = 2;
+        this.ctx.stroke();
+
+        // ===== FRENTE =====
+        this.ctx.beginPath();
+        this.ctx.moveTo(x - depth, y + depth);
+        this.ctx.lineTo(x + width - depth, y + depth);
+        this.ctx.lineTo(x + width - depth, y + height);
+        this.ctx.lineTo(x - depth, y + height);
+        this.ctx.closePath();
+
+        this.ctx.fillStyle = "#120326";
+        this.ctx.fill();
+
+        this.ctx.stroke();
+
+        this.ctx.restore();
+    }
 
 }
