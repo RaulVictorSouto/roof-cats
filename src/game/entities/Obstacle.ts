@@ -42,12 +42,6 @@ export class Obstacle {
                 this.width = 90;
                 this.height = 190;
                 break;
-
-            // Buraco
-            case ObstacleType.Gap:
-                this.width = 170;
-                this.height = 0;
-                break;
         }
 
         this.y = groundY - this.height;
@@ -58,10 +52,6 @@ export class Obstacle {
     }
 
     render(ctx: CanvasRenderingContext2D) {
-
-        // Buraco não desenha nada
-        if (this.type === ObstacleType.Gap)
-            return;
 
         ctx.fillStyle = "#FF2ED6";
 
@@ -80,9 +70,6 @@ export class Obstacle {
 
     getBounds() {
 
-        if (this.type === ObstacleType.Gap)
-            return null;
-
         return {
             x: this.x,
             y: this.y,
@@ -98,8 +85,7 @@ export const ObstacleType = {
     Small: "small",
     Medium: "medium",
     Large: "large",
-    Wall: "wall",
-    Gap: "gap"
+    Wall: "wall"
 } as const;
 
 export type ObstacleType =

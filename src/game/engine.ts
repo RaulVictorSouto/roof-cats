@@ -67,74 +67,90 @@ export class Engine {
     if (this.gameOver)
         return;
 
-        if (this.input.consumeJump())
-            this.cat.jump();
+    if (this.input.consumeJump())
+        this.cat.jump();
 
-        this.cat.update(delta);
+    // ==========================
+    // Verifica se existe um buraco sob o gato
+    // ==========================
 
-        // Atualiza obstáculos
-        for (const obstacle of this.obstacles) {
-            obstacle.update(delta, this.gameSpeed);
-        }
+    // Atualiza física do gato
+    this.cat.update(delta);
 
-        // Remove obstáculos que saíram da tela
-        this.obstacles = this.obstacles.filter(
-            obstacle => obstacle.x + obstacle.width > 0
+    // Atualiza obstáculos
+    for (const obstacle of this.obstacles) {
+        obstacle.update(delta, this.gameSpeed);
+    }
+
+    // Remove obstáculos fora da tela
+    this.obstacles = this.obstacles.filter(
+        obstacle => obstacle.x + obstacle.width > 0
+    );
+
+    // ==========================
+    // Spawn
+    // ==========================
+
+    this.spawnTimer += delta;
+
+    if (this.spawnTimer >= this.nextSpawn) {
+
+        this.spawnTimer = 0;
+
+        this.nextSpawn = Math.max(
+            0.35,
+            1.5 - this.gameSpeed / 3000
         );
 
-        // Spawn
-        this.spawnTimer += delta;
+        const types = [
+            ObstacleType.Small,
+            ObstacleType.Small,
+            ObstacleType.Small,
 
-        if (this.spawnTimer >= this.nextSpawn) {
+            ObstacleType.Medium,
+            ObstacleType.Medium,
 
-            this.spawnTimer = 0;
+            ObstacleType.Large,
 
-            // Intervalo diminui conforme a velocidade aumenta
-            this.nextSpawn = Math.max(
-                0.35,
-                1.5 - this.gameSpeed / 3000
-            );
+            ObstacleType.Wall
+        ];
 
-            const types = [
-                ObstacleType.Small,
-                ObstacleType.Small,
-                ObstacleType.Small,
+        const randomType =
+            types[Math.floor(Math.random() * types.length)];
 
-                ObstacleType.Medium,
-                ObstacleType.Medium,
-
-                ObstacleType.Large,
-
-                ObstacleType.Wall,
-
-                ObstacleType.Gap
-            ];
-
-            const randomType =
-                types[Math.floor(Math.random() * types.length)];
-
-            this.obstacles.push(
-                new Obstacle(
-                    randomType,
-                    this.canvas.width + 100,
-                    this.groundY
-                )
-            );
-
-        }
-
-        // Movimento do chão
-        this.floorOffset += this.gameSpeed * delta;
-
-        // Pontuação
-        this.score += delta * 100;
-        this.gameSpeed += delta * 10;
-
-        if(this.checkCollision()){
-            this.gameOver = true;
-            alert("Game Over! Sua pontuação: " + Math.floor(this.score));
-        }
+        this.obstacles.push(
+            new Obstacle(
+                randomType,
+                this.canvas.width + 100,
+                this.groundY
+            )
+        );
     }
+
+    // Movimento
+    this.floorOffset += this.gameSpeed * delta;
+
+    this.score += delta * 100;
+    this.gameSpeed += delta * 10;
+
+    // Morreu ao cair
+    if (this.cat.y > this.canvas.height + 200) {
+
+        this.gameOver = true;
+        alert("Você caiu!");
+
+        return;
+    }
+
+    // Morreu batendo
+    if (this.checkCollision()) {
+
+        this.gameOver = true;
+        alert("Game Over! Sua pontuação: " + Math.floor(this.score));
+
+    }
+
+}
 
     render() {
         this.ctx.fillStyle = "#0b0720";
@@ -155,15 +171,6 @@ export class Engine {
             const x = (star.x * this.canvas.width - this.floorOffset * 0.15) % this.canvas.width;
         }
 
-        // chão
-        this.ctx.strokeStyle = "#FF2ED6";
-        this.ctx.lineWidth = 4;
-
-        this.ctx.beginPath();
-        this.ctx.moveTo(0, this.groundY);
-        this.ctx.lineTo(this.canvas.width, this.groundY);
-        this.ctx.stroke();
-
         // gato
         this.cat.render(this.ctx);
 
@@ -172,17 +179,14 @@ export class Engine {
             obstacle.render(this.ctx);
         }
 
-        const tile = 80;
-        for (let x = -(this.floorOffset % tile); x < this.canvas.width; x += tile) {
-            this.ctx.strokeStyle = "#FF2ED6";
-            this.ctx.strokeRect(
-                x,
-                this.groundY,
-                tile,
-                40
-            );
-        }
+  const tile = 80;
 
+let floorStart = 0;
+
+this.drawFloor(
+    floorStart,
+    this.canvas.width
+);
         // ===== HUD =====
         this.hud.render(
             this.ctx,
@@ -227,5 +231,31 @@ export class Engine {
 
         return false;
     }
+
+    private drawFloor(from: number, to: number) {
+
+    const tile = 80;
+
+    const start =
+        from - ((this.floorOffset % tile + tile) % tile);
+
+    this.ctx.strokeStyle = "#FF2ED6";
+    this.ctx.lineWidth = 4;
+
+    for (let x = start; x < to; x += tile) {
+
+        if (x + tile < from)
+            continue;
+
+        this.ctx.strokeRect(
+            x,
+            this.groundY,
+            tile,
+            40
+        );
+
+    }
+
+}
 
 }

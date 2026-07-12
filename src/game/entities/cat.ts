@@ -154,17 +154,12 @@ export class Cat {
     }
 
     getBounds() {
-
         return {
-
             x: this.x + 30,
-            y: this.y + 30,
-
-            width: this.width - 60,
-            height: this.height - 45
-
+            y: this.y + 18,
+            width: this.width - 45,
+            height: this.height - 20
         };
-
     }
 
 }
