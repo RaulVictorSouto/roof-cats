@@ -4,6 +4,9 @@ import { Obstacle, ObstacleType } from "../entities/obstacle";
 import { Hud } from "../entities/hub";
 import { Floor } from "../entities/floor";
 import { Background } from "../entities/background";
+import type { Scene } from "../scenes/scene";
+import { MenuScene } from "../scenes/menu.scene";
+import { LoginScene } from "../scenes/login.scene";
 
 export class Engine {
 
@@ -15,6 +18,7 @@ export class Engine {
     private input!: Input;
     private cat!: Cat;
     private background = new Background();
+    private currentScene!: Scene;
 
     private lastTime = 0;
     private groundY = 0;
@@ -30,6 +34,22 @@ export class Engine {
     private floorOffset = 0;
 
     constructor(canvas: HTMLCanvasElement) {
+        this.currentScene = new MenuScene(
+            (option) => {
+                switch (option) {
+
+                    case "SINGLE PLAYER":
+                        this.setScene(new LoginScene());
+                        break;
+
+                    case "MULTIPLAYER":
+                        alert("Em breve!");
+                        break;
+
+                }
+            }
+        );
+
         this.canvas = canvas;
 
         const ctx = canvas.getContext("2d");
@@ -63,6 +83,10 @@ export class Engine {
     }
 
     update(delta: number) {
+        if (this.currentScene) {
+            this.currentScene.update(delta);
+            return;
+        }
 
         if (this.gameOver)
             return;
@@ -153,6 +177,15 @@ export class Engine {
     }
 
     render() {
+        if (this.currentScene) {
+            this.currentScene.render(
+                this.ctx,
+                this.canvas
+            );
+            return;
+
+        }
+
         this.ctx.fillStyle = "#0b0720";
         this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
 
@@ -214,6 +247,13 @@ export class Engine {
         }
 
         return false;
+    }
+
+
+    setScene(scene: Scene){
+        this.currentScene?.onExit?.();
+        this.currentScene = scene;
+        this.currentScene.onEnter?.();
     }
 
 }
