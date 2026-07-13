@@ -1,5 +1,5 @@
 import "./style.css";
-import { Engine } from "./game/engine";
+import { Engine } from "./game/engine/engine";
 
 const canvas = document.createElement("canvas");
 document.body.appendChild(canvas);
