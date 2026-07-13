@@ -7,6 +7,7 @@ import { Background } from "../entities/background";
 import type { Scene } from "../scenes/scene";
 import { MenuScene } from "../scenes/menu.scene";
 import { LoginScene } from "../scenes/login.scene";
+import { CreateAccountScene } from "../scenes/createAccount.scene";
 
 export class Engine {
 
@@ -18,7 +19,10 @@ export class Engine {
     private input!: Input;
     private cat!: Cat;
     private background = new Background();
-    private currentScene!: Scene;
+
+    // Opcional: quando undefined, o loop principal roda o jogo em vez
+    // de renderizar uma scene (login, criar conta, menu, etc).
+    private currentScene?: Scene;
 
     private lastTime = 0;
     private groundY = 0;
@@ -39,7 +43,7 @@ export class Engine {
                 switch (option) {
 
                     case "SINGLE PLAYER":
-                        this.setScene(new LoginScene());
+                        this.setScene(this.buildLoginScene());
                         break;
 
                     case "MULTIPLAYER":
@@ -67,6 +71,39 @@ export class Engine {
         this.cat = new Cat(this.groundY);
 
         window.addEventListener("resize", () => this.resize());
+
+        // Sem isso, nenhuma scene (menu, login, criar conta) recebe toque/clique:
+        // ela só desenha os botões/links no canvas, mas nada escutava o clique
+        // e repassava pra scene.handleTouch(). Esse listener resolve isso.
+        this.canvas.addEventListener("pointerdown", (e) => this.handleCanvasPointer(e));
+    }
+
+    /**
+     * Converte a coordenada do toque/clique (em pixels CSS, relativos à
+     * página) para a coordenada interna do canvas (canvas.width/height),
+     * já que em telas de alta densidade (retina/mobile) esses valores
+     * costumam ser diferentes. Sem essa conversão, o hit-test dentro de
+     * handleTouch() fica errado em boa parte dos dispositivos.
+     */
+    private handleCanvasPointer(e: PointerEvent) {
+
+        if (!this.currentScene)
+            return;
+
+        // Scene may not implement handleTouch; check at runtime
+        const handler = (this.currentScene as any).handleTouch;
+        if (typeof handler !== "function")
+            return;
+
+        const rect = this.canvas.getBoundingClientRect();
+
+        const scaleX = this.canvas.width / rect.width;
+        const scaleY = this.canvas.height / rect.height;
+
+        const x = (e.clientX - rect.left) * scaleX;
+        const y = (e.clientY - rect.top) * scaleY;
+
+        handler.call(this.currentScene, x, y);
     }
 
     start() {
@@ -249,11 +286,51 @@ export class Engine {
         return false;
     }
 
+    /**
+     * Monta a LoginScene já com os callbacks ligados:
+     * - login bem sucedido -> fecha a scene e começa o jogo
+     * - "criar conta"      -> troca pra CreateAccountScene
+     */
+    private buildLoginScene(): LoginScene {
+        return new LoginScene(
+            (user, password) => {
+                // TODO: validar credenciais (API/local) antes de iniciar o jogo
+                this.startGame();
+            },
+            () => {
+                this.setScene(this.buildCreateAccountScene());
+            }
+        );
+    }
 
-    setScene(scene: Scene){
+    /**
+     * Monta a CreateAccountScene já com os callbacks ligados:
+     * - conta criada  -> fecha a scene e começa o jogo (ou loga automaticamente)
+     * - "voltar"      -> volta pra LoginScene
+     */
+    private buildCreateAccountScene(): CreateAccountScene {
+        return new CreateAccountScene(
+            (user, email, password) => {
+                // TODO: persistir a conta (API/local) antes de iniciar o jogo
+                this.startGame();
+            },
+            () => {
+                this.setScene(this.buildLoginScene());
+            }
+        );
+    }
+
+    /**
+     * Fecha qualquer scene de UI ativa e retoma o loop do jogo.
+     */
+    private startGame() {
+        this.setScene(undefined);
+    }
+
+    setScene(scene: Scene | undefined) {
         this.currentScene?.onExit?.();
         this.currentScene = scene;
-        this.currentScene.onEnter?.();
+        this.currentScene?.onEnter?.();
     }
 
 }
