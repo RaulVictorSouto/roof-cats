@@ -10,8 +10,12 @@ import { LoginScene } from "../scenes/login.scene";
 import { CreateAccountScene } from "../scenes/createAccount.scene";
 import { AuthService } from "../../service/auth.service";
 import { GameService } from "../../service/game.service";
+import { GameOverModal } from "../entities/gameOverModal";
 
 export class Engine {
+    exit(): void {
+        throw new Error("Method not implemented.");
+    }
 
     readonly canvas: HTMLCanvasElement;
     readonly ctx: CanvasRenderingContext2D;
@@ -21,6 +25,11 @@ export class Engine {
     private input!: Input;
     private cat!: Cat;
     private background = new Background();
+    private gameOverModal =
+        new GameOverModal(
+            ()=>this.start(),
+            ()=>this.exit()
+        );
 
     // Opcional: quando undefined, o loop principal roda o jogo em vez
     // de renderizar uma scene (login, criar conta, menu, etc).
@@ -191,11 +200,11 @@ export class Engine {
         this.gameSpeed += delta * 10;
 
         // Morreu batendo
-        if (this.checkCollision()) {
+        if(this.checkCollision()){
             this.gameOver = true;
-            await GameService.saveRun(this.score);
-            alert("Game Over! Sua pontuação: " + Math.floor(this.score));
 
+            const result = await GameService.saveRun(this.score);
+            this.gameOverModal.show(this.score, result.ranking ?? []);
         }
 
     }
@@ -236,6 +245,13 @@ export class Engine {
         );
 
         this.ctx.restore();
+
+        this.gameOverModal.render(
+            this.ctx,
+            this.canvas
+        );
+
+        
     }
 
     resize() {

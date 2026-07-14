@@ -62,4 +62,10 @@ export interface GameResponse {
     message: string;
     score?: number;
     bestScore?: number;
+    ranking?: RankingPlayer[];
+}
+
+export interface RankingPlayer {
+    username:string;
+    score:number;
 }
