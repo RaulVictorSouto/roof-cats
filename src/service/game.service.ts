@@ -47,6 +47,9 @@ export const GameService = {
         return postJson(
             "/run",
             {
+                // ATENÇÃO: confirmar com o DTO do backend — "core" parece
+                // um typo de "score". Se o C# espera "Score", isso vai
+                // salvar sempre nulo/errado no servidor.
                 core: Math.floor(score),
                 finishedAt: finishedAt.toISOString()
             }
@@ -66,6 +69,6 @@ export interface GameResponse {
 }
 
 export interface RankingPlayer {
-    username:string;
-    score:number;
+    username: string;
+    score: number;
 }
