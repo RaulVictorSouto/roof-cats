@@ -9,6 +9,7 @@ import { MenuScene } from "../scenes/menu.scene";
 import { LoginScene } from "../scenes/login.scene";
 import { CreateAccountScene } from "../scenes/createAccount.scene";
 import { AuthService } from "../../service/auth.service";
+import { GameService } from "../../service/game.service";
 
 export class Engine {
 
@@ -115,7 +116,7 @@ export class Engine {
         requestAnimationFrame(this.loop);
     }
 
-    update(delta: number) {
+    async update(delta: number) {
         if (this.currentScene) {
             this.currentScene.update(delta);
             return;
@@ -172,8 +173,7 @@ export class Engine {
                 ObstacleType.Wall
             ];
 
-            const randomType =
-                types[Math.floor(Math.random() * types.length)];
+            const randomType = types[Math.floor(Math.random() * types.length)];
 
             this.obstacles.push(
                 new Obstacle(
@@ -190,19 +190,10 @@ export class Engine {
         this.score += delta * 100;
         this.gameSpeed += delta * 10;
 
-        // Morreu ao cair
-        if (this.cat.y > this.canvas.height + 200) {
-
-            this.gameOver = true;
-            alert("Você caiu!");
-
-            return;
-        }
-
         // Morreu batendo
         if (this.checkCollision()) {
-
             this.gameOver = true;
+            await GameService.saveRun(this.score);
             alert("Game Over! Sua pontuação: " + Math.floor(this.score));
 
         }
