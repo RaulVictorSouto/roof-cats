@@ -12,6 +12,7 @@ export class CreateAccountScene implements Scene {
     private selected = 0;
 
     private errorMessage = "";
+    private loading = false;
 
     private onCreateAccount: (user: string, email: string, password: string) => void;
     private onBackToLogin: () => void;
@@ -54,6 +55,24 @@ export class CreateAccountScene implements Scene {
             this.cursorVisible = !this.cursorVisible;
             this.cursorTimer = 0;
         }
+    }
+
+    /**
+     * Chamado de fora (Engine) quando a API responde com erro
+     * (ex: email já cadastrado, erro de rede, etc).
+     */
+    setError(message: string) {
+        this.errorMessage = message;
+        this.loading = false;
+    }
+
+    /**
+     * Chamado de fora (Engine) antes/depois de chamar a API,
+     * pra travar reenvio duplicado e mostrar feedback visual.
+     */
+    setLoading(loading: boolean) {
+        this.loading = loading;
+        if (loading) this.errorMessage = "";
     }
 
     /**
@@ -172,14 +191,15 @@ export class CreateAccountScene implements Scene {
             ctx.textAlign = "center";
             ctx.font = `${Math.min(canvas.width * .028, 13)}px 'Press Start 2P'`;
             ctx.fillStyle = "#FF4D6D";
+            ctx.lineWidth
             ctx.fillText(this.errorMessage, canvas.width / 2, buttonY - 35);
         }
 
         /* BUTTON CREATE ACCOUNT */
         ctx.textAlign = "center";
         ctx.font = `${Math.min(canvas.width * .04, 18)}px 'Press Start 2P'`;
-        ctx.fillStyle = "#FFE600";
-        ctx.fillText("[ CREATE ACCOUNT ]", canvas.width / 2, buttonY);
+        ctx.fillStyle = this.loading ? "#777" : "#FFE600";
+        ctx.fillText(this.loading ? "[ LOADING... ]" : "[ CREATE ACCOUNT ]", canvas.width / 2, buttonY);
 
         /* BACK TO LOGIN */
         ctx.font = `${Math.min(canvas.width * .03, 14)}px 'Press Start 2P'`;
@@ -281,6 +301,8 @@ export class CreateAccountScene implements Scene {
         y: number
     ) {
 
+        if (this.loading) return;
+
         const canvas = this.canvas;
         const { buttonY, linkY } = this.getLayout(canvas);
 
@@ -354,7 +376,7 @@ export class CreateAccountScene implements Scene {
                 return;
 
             case "Enter":
-                this.trySubmit();
+                if (!this.loading) this.trySubmit();
                 return;
         }
 

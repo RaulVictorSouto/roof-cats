@@ -3,19 +3,22 @@ import type { Scene } from "./scene";
 export class LoginScene implements Scene {
 
     private fields: FieldConfig[] = [
-        { label: "USERNAME", value: "", max: 16 },
-        { label: "PASSWORD", value: "", max: 20 }
+        { label: "EMAIL", value: "", max: 32, type: "email" },
+        { label: "PASSWORD", value: "", max: 20, secure: true, type: "password" }
     ];
 
     private selected = 0;
 
-    private onLogin: (user: string, password: string) => void;
+    private errorMessage = "";
+    private loading = false;
+
+    private onLogin: (email: string, password: string) => void;
     private onRegister: () => void;
 
     private cursorVisible = true;
     private cursorTimer = 0;
 
-    private usernameInput!: HTMLInputElement;
+    private emailInput!: HTMLInputElement;
     private passwordInput!: HTMLInputElement;
 
     private canvas!: HTMLCanvasElement;
@@ -23,7 +26,7 @@ export class LoginScene implements Scene {
     private resizeHandler = () => this.positionInputs();
 
     constructor(
-        onLogin: (user: string, password: string) => void,
+        onLogin: (email: string, password: string) => void,
         onRegister: () => void
     ) {
         this.onLogin = onLogin;
@@ -54,6 +57,24 @@ export class LoginScene implements Scene {
     }
 
     /**
+     * Chamado de fora (Engine) quando a API responde com erro
+     * (credenciais inválidas, erro de rede, etc).
+     */
+    setError(message: string) {
+        this.errorMessage = message;
+        this.loading = false;
+    }
+
+    /**
+     * Chamado de fora (Engine) antes/depois de chamar a API,
+     * pra travar reenvio duplicado e mostrar feedback visual.
+     */
+    setLoading(loading: boolean) {
+        this.loading = loading;
+        if (loading) this.errorMessage = "";
+    }
+
+    /**
      * Fonte única de verdade para o layout do card e dos campos.
      * Usado pelo render(), pelo posicionamento dos <input> reais
      * e pelo handleTouch (para os botões), evitando qualquer
@@ -80,7 +101,12 @@ export class LoginScene implements Scene {
             height: inputHeight
         }));
 
-        return { x, y, cardWidth, cardHeight, fieldRects };
+        return {
+            x, y, cardWidth, cardHeight,
+            fieldRects,
+            buttonY: y + 300,
+            linkY: y + 350
+        };
     }
 
     render(
@@ -90,7 +116,7 @@ export class LoginScene implements Scene {
 
         this.canvas = canvas;
 
-        const { x, y, cardWidth, cardHeight, fieldRects } = this.getLayout(canvas);
+        const { x, y, cardWidth, cardHeight, fieldRects, buttonY, linkY } = this.getLayout(canvas);
 
         ctx.fillStyle = "#07000F";
         ctx.fillRect(0, 0, canvas.width, canvas.height);
@@ -124,7 +150,7 @@ export class LoginScene implements Scene {
 
             let text = field.value;
 
-            if (index === 1) {
+            if (field.secure) {
                 text = "●".repeat(field.value.length);
             }
 
@@ -149,16 +175,24 @@ export class LoginScene implements Scene {
             ctx.fillText(text, rect.x + 15, rect.y + rect.height / 2);
         });
 
+        /* ERROR MESSAGE */
+        if (this.errorMessage) {
+            ctx.textAlign = "center";
+            ctx.font = `${Math.min(canvas.width * .028, 13)}px 'Press Start 2P'`;
+            ctx.fillStyle = "#FF4D6D";
+            ctx.fillText(this.errorMessage, canvas.width / 2, buttonY - 35);
+        }
+
         /* BUTTON LOGIN */
         ctx.textAlign = "center";
         ctx.font = `${Math.min(canvas.width * .04, 18)}px 'Press Start 2P'`;
-        ctx.fillStyle = "#FFE600";
-        ctx.fillText("[ LOGIN ]", canvas.width / 2, y + 300);
+        ctx.fillStyle = this.loading ? "#777" : "#FFE600";
+        ctx.fillText(this.loading ? "[ LOADING... ]" : "[ LOGIN ]", canvas.width / 2, buttonY);
 
         /* REGISTER */
         ctx.font = `${Math.min(canvas.width * .03, 14)}px 'Press Start 2P'`;
         ctx.fillStyle = "#A0D7FF";
-        ctx.fillText("[ CREATE ACCOUNT ]", canvas.width / 2, y + 350);
+        ctx.fillText("CREATE ACCOUNT", canvas.width / 2, linkY);
 
         // Mantém os <input> reais grudados nas caixas desenhadas
         this.positionInputs();
@@ -166,23 +200,23 @@ export class LoginScene implements Scene {
 
     private createInputs() {
 
-        this.usernameInput = document.createElement("input");
+        this.emailInput = document.createElement("input");
         this.passwordInput = document.createElement("input");
 
-        this.usernameInput.type = "text";
+        this.emailInput.type = "email";
         this.passwordInput.type = "password";
 
-        this.usernameInput.maxLength = 16;
-        this.passwordInput.maxLength = 20;
+        this.emailInput.maxLength = this.fields[0].max;
+        this.passwordInput.maxLength = this.fields[1].max;
 
         // Atributos importantes pra mobile:
-        // - autocomplete/autocapitalize/autocorrect evitam comportamentos
-        //   estranhos do teclado nativo em iOS/Android
+        // - autocomplete/inputMode ajudam o teclado nativo a se comportar certo
         // - font-size 16px evita que o Safari dê zoom automático no foco
-        this.usernameInput.autocomplete = "username";
-        this.usernameInput.autocapitalize = "none";
-        this.usernameInput.setAttribute("autocorrect", "off");
-        this.usernameInput.spellcheck = false;
+        this.emailInput.inputMode = "email";
+        this.emailInput.autocomplete = "email";
+        this.emailInput.autocapitalize = "none";
+        this.emailInput.setAttribute("autocorrect", "off");
+        this.emailInput.spellcheck = false;
 
         this.passwordInput.autocomplete = "current-password";
         this.passwordInput.autocapitalize = "none";
@@ -197,42 +231,37 @@ export class LoginScene implements Scene {
             padding: "0",
             margin: "0",
             background: "transparent",
-            fontSize: "16px", // essencial no iOS pra não dar zoom ao focar
+            fontSize: "16px",
             zIndex: "1000",
             pointerEvents: "auto"
         };
 
-        Object.assign(this.usernameInput.style, baseStyle);
+        Object.assign(this.emailInput.style, baseStyle);
         Object.assign(this.passwordInput.style, baseStyle);
 
-        document.body.appendChild(this.usernameInput);
+        document.body.appendChild(this.emailInput);
         document.body.appendChild(this.passwordInput);
 
-        this.usernameInput.addEventListener("input", () => {
-            this.fields[0].value = this.usernameInput.value;
+        this.emailInput.addEventListener("input", () => {
+            this.fields[0].value = this.emailInput.value;
+            this.errorMessage = "";
         });
 
         this.passwordInput.addEventListener("input", () => {
             this.fields[1].value = this.passwordInput.value;
+            this.errorMessage = "";
         });
 
         // Toque real do usuário no input -> sincroniza qual campo está selecionado
-        this.usernameInput.addEventListener("focus", () => { this.selected = 0; });
+        this.emailInput.addEventListener("focus", () => { this.selected = 0; });
         this.passwordInput.addEventListener("focus", () => { this.selected = 1; });
     }
 
     /**
      * Posiciona os <input> reais exatamente sobre as caixas desenhadas no canvas,
-     * convertendo coordenadas internas do canvas (canvas.width/height) para
-     * coordenadas CSS reais na tela (getBoundingClientRect), já que em telas
-     * de alta densidade (retina/mobile) esses valores costumam ser diferentes.
-     *
-     * Isso é o que resolve o "não consigo clicar": antes os inputs ficavam
-     * escondidos fora da tela (top:-100px) e dependiam de handleTouch() acertar
-     * a coordenada certa e chamar focus() manualmente — o que é frágil em mobile,
-     * pois o toque nunca acontece de fato sobre um elemento focável e o iOS
-     * costuma bloquear o teclado nesse cenário. Agora o dedo toca literalmente
-     * no <input> real.
+     * convertendo coordenadas internas do canvas para coordenadas CSS reais na
+     * tela (getBoundingClientRect), já que em telas de alta densidade essas
+     * proporções costumam ser diferentes.
      */
     private positionInputs() {
 
@@ -253,7 +282,7 @@ export class LoginScene implements Scene {
             input.style.height = `${box.height * scaleY}px`;
         };
 
-        apply(this.usernameInput, fieldRects[0]);
+        apply(this.emailInput, fieldRects[0]);
         apply(this.passwordInput, fieldRects[1]);
     }
 
@@ -262,40 +291,45 @@ export class LoginScene implements Scene {
         y: number
     ) {
 
+        if (this.loading) return;
+
         const canvas = this.canvas;
-        const { y: cardY } = this.getLayout(canvas);
+        const { buttonY, linkY } = this.getLayout(canvas);
 
         /* LOGIN BUTTON */
-        if (
-            y > cardY + 270 &&
-            y < cardY + 330
-        ) {
-            this.onLogin(
-                this.fields[0].value,
-                this.fields[1].value
-            );
+        if (y > buttonY - 30 && y < buttonY + 30) {
+            this.trySubmit();
             return;
         }
 
         /* REGISTER */
-        if (
-            y > cardY + 330 &&
-            y < cardY + 390
-        ) {
+        if (y > linkY - 25 && y < linkY + 25) {
             this.onRegister();
             return;
         }
 
-        // USERNAME/PASSWORD não precisam mais de hit-test manual aqui:
+        // EMAIL/PASSWORD não precisam de hit-test manual aqui:
         // os <input> reais já estão fisicamente sobre essas áreas
-        // (ver positionInputs), então o próprio toque do usuário já
-        // foca o elemento certo antes mesmo de chegar em handleTouch.
+        // (ver positionInputs).
+    }
+
+    private trySubmit() {
+
+        const [email, password] = this.fields.map(f => f.value);
+
+        if (!email || !password) {
+            this.errorMessage = "FILL ALL FIELDS";
+            return;
+        }
+
+        this.errorMessage = "";
+        this.onLogin(email, password);
     }
 
     private removeInputs() {
 
-        if (this.usernameInput) {
-            this.usernameInput.remove();
+        if (this.emailInput) {
+            this.emailInput.remove();
         }
 
         if (this.passwordInput) {
@@ -309,7 +343,7 @@ export class LoginScene implements Scene {
     private onKeyDown = (e: KeyboardEvent) => {
 
         const activeIsInput =
-            document.activeElement === this.usernameInput ||
+            document.activeElement === this.emailInput ||
             document.activeElement === this.passwordInput;
 
         switch (e.key) {
@@ -328,10 +362,7 @@ export class LoginScene implements Scene {
                 return;
 
             case "Enter":
-                this.onLogin(
-                    this.fields[0].value,
-                    this.fields[1].value
-                );
+                if (!this.loading) this.trySubmit();
                 return;
         }
 
@@ -361,6 +392,8 @@ interface FieldConfig {
     label: string;
     value: string;
     max: number;
+    secure?: boolean;
+    type?: "text" | "email" | "password";
 }
 
 interface Rect {

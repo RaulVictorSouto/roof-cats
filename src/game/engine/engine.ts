@@ -8,6 +8,7 @@ import type { Scene } from "../scenes/scene";
 import { MenuScene } from "../scenes/menu.scene";
 import { LoginScene } from "../scenes/login.scene";
 import { CreateAccountScene } from "../scenes/createAccount.scene";
+import { AuthService } from "../../service/auth.service";
 
 export class Engine {
 
@@ -86,13 +87,8 @@ export class Engine {
      * handleTouch() fica errado em boa parte dos dispositivos.
      */
     private handleCanvasPointer(e: PointerEvent) {
-
-        if (!this.currentScene)
-            return;
-
-        // Scene may not implement handleTouch; check at runtime
-        const handler = (this.currentScene as any).handleTouch;
-        if (typeof handler !== "function")
+        const scene = this.currentScene;
+        if (!scene || typeof (scene as any).handleTouch !== "function")
             return;
 
         const rect = this.canvas.getBoundingClientRect();
@@ -103,7 +99,7 @@ export class Engine {
         const x = (e.clientX - rect.left) * scaleX;
         const y = (e.clientY - rect.top) * scaleY;
 
-        handler.call(this.currentScene, x, y);
+        (scene as any).handleTouch(x, y);
     }
 
     start() {
@@ -287,37 +283,77 @@ export class Engine {
     }
 
     /**
-     * Monta a LoginScene já com os callbacks ligados:
-     * - login bem sucedido -> fecha a scene e começa o jogo
+     * Monta a LoginScene já com os callbacks ligados na API real:
+     * - login bem sucedido -> guarda o token e começa o jogo
+     * - login com erro     -> mostra a mensagem na própria scene
      * - "criar conta"      -> troca pra CreateAccountScene
      */
     private buildLoginScene(): LoginScene {
-        return new LoginScene(
-            (user, password) => {
-                // TODO: validar credenciais (API/local) antes de iniciar o jogo
+
+        // Declarado antes e atribuído depois pra o callback (onLogin) poder
+        // referenciar a própria scene e chamar setLoading/setError nela.
+        let scene: LoginScene;
+
+        scene = new LoginScene(
+            async (email, password) => {
+
+                scene.setLoading(true);
+
+                const result = await AuthService.login(email, password);
+
+                if (!result.success) {
+                    scene.setError(result.message || "Login inválido");
+                    return;
+                }
+
+                if (result.token) {
+                    AuthService.setToken(result.token);
+                }
+
                 this.startGame();
             },
             () => {
                 this.setScene(this.buildCreateAccountScene());
             }
         );
+
+        return scene;
     }
 
     /**
-     * Monta a CreateAccountScene já com os callbacks ligados:
-     * - conta criada  -> fecha a scene e começa o jogo (ou loga automaticamente)
-     * - "voltar"      -> volta pra LoginScene
+     * Monta a CreateAccountScene já com os callbacks ligados na API real:
+     * - conta criada com sucesso -> guarda o token e começa o jogo
+     * - erro (ex: email já em uso) -> mostra a mensagem na própria scene
+     * - "voltar" -> volta pra LoginScene
      */
     private buildCreateAccountScene(): CreateAccountScene {
-        return new CreateAccountScene(
-            (user, email, password) => {
-                // TODO: persistir a conta (API/local) antes de iniciar o jogo
+
+        let scene: CreateAccountScene;
+
+        scene = new CreateAccountScene(
+            async (username: any, email: any, password: any) => {
+
+                scene.setLoading(true);
+
+                const result = await AuthService.register(username, email, password);
+
+                if (!result.success) {
+                    scene.setError(result.message || "Não foi possível criar a conta");
+                    return;
+                }
+
+                if (result.token) {
+                    AuthService.setToken(result.token);
+                }
+
                 this.startGame();
             },
             () => {
                 this.setScene(this.buildLoginScene());
             }
         );
+
+        return scene;
     }
 
     /**
